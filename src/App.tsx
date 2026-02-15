@@ -1,5 +1,5 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { AuthProvider } from './context/AuthContext';
+import { AuthProvider, useAuth } from './context/AuthContext';
 import { Layout } from './components/layout/Layout';
 import { Dashboard } from './pages/Dashboard';
 import { CommandCenter } from './pages/CommandCenter';
@@ -12,26 +12,42 @@ import { Workflows } from './pages/Workflows';
 import { Reports } from './pages/Reports';
 import { Settings } from './pages/Settings';
 import { Welcome } from './pages/Welcome';
-import { isAuthenticated } from './lib/api';
 
-// Synchronous check - runs before any render
-function isUserOnboarded(): boolean {
-  return isAuthenticated() && !!localStorage.getItem('antigravity_user');
+function FullScreenLoader() {
+  return (
+    <div className="min-h-screen bg-[#fafafa] flex items-center justify-center">
+      <div className="w-8 h-8 border-2 border-gray-300 border-t-gray-900 rounded-full animate-spin" />
+    </div>
+  );
 }
 
 // Protected Route wrapper - redirects to /welcome if not onboarded
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
-  if (!isUserOnboarded()) {
+  const { isLoading, isLoggedIn } = useAuth();
+
+  if (isLoading) {
+    return <FullScreenLoader />;
+  }
+
+  if (!isLoggedIn) {
     return <Navigate to="/welcome" replace />;
   }
+
   return <>{children}</>;
 }
 
 // Auth Route wrapper - redirects to / if already onboarded
 function AuthRoute({ children }: { children: React.ReactNode }) {
-  if (isUserOnboarded()) {
+  const { isLoading, isLoggedIn } = useAuth();
+
+  if (isLoading) {
+    return <FullScreenLoader />;
+  }
+
+  if (isLoggedIn) {
     return <Navigate to="/" replace />;
   }
+
   return <>{children}</>;
 }
 
