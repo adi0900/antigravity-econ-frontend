@@ -122,10 +122,20 @@ async function apiFetch<T>(
   }
 
   try {
-    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-      ...options,
-      headers,
-    });
+    const controller = new AbortController();
+    const timeoutMs = 15000;
+    const timeoutId = window.setTimeout(() => controller.abort(), timeoutMs);
+    let response: Response;
+
+    try {
+      response = await fetch(`${API_BASE_URL}${endpoint}`, {
+        ...options,
+        headers,
+        signal: controller.signal,
+      });
+    } finally {
+      window.clearTimeout(timeoutId);
+    }
 
     const data = await response.json();
 
@@ -139,6 +149,14 @@ async function apiFetch<T>(
     return data;
   } catch (error) {
     console.error('API Error:', error);
+
+    if (error instanceof DOMException && error.name === 'AbortError') {
+      return {
+        success: false,
+        error: 'Request timed out. Please try again.',
+      };
+    }
+
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Network error',

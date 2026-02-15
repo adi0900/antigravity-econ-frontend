@@ -36,27 +36,28 @@ export function Dashboard() {
   const fetchData = async () => {
     setIsLoading(true);
     try {
-      // Fetch stats
-      const statsResponse = await reportsApi.getStats();
-      if (statsResponse.success && statsResponse.data) {
+      const [statsResponse, reportsResponse] = await Promise.allSettled([
+        reportsApi.getStats(),
+        reportsApi.list({ limit: 6 }),
+      ]);
+
+      if (statsResponse.status === 'fulfilled' && statsResponse.value.success && statsResponse.value.data) {
         setStats({
-          totalEmissions: statsResponse.data.totalEmissions,
-          activeReports: statsResponse.data.reportCount,
-          pendingAudits: statsResponse.data.pendingWorkflows,
-          weeklyChange: statsResponse.data.weeklyChange.percentChange,
+          totalEmissions: statsResponse.value.data.totalEmissions,
+          activeReports: statsResponse.value.data.reportCount,
+          pendingAudits: statsResponse.value.data.pendingWorkflows,
+          weeklyChange: statsResponse.value.data.weeklyChange.percentChange,
         });
       }
 
-      // Fetch recent reports
-      const reportsResponse = await reportsApi.list({ limit: 6 });
-      if (reportsResponse.success && reportsResponse.data) {
-        const miniReports: MiniReport[] = reportsResponse.data.reports.map((r: Report) => ({
+      if (reportsResponse.status === 'fulfilled' && reportsResponse.value.success && reportsResponse.value.data) {
+        const miniReports: MiniReport[] = reportsResponse.value.data.reports.map((r: Report) => ({
           id: r.id,
           title: r.title,
           subtitle: r.type.charAt(0).toUpperCase() + r.type.slice(1),
           value: Number(r.total_emissions),
           unit: r.unit,
-          change: 0, // Would need historical data to calculate
+          change: 0,
           trend: 'down' as const,
         }));
         setReports(miniReports);
