@@ -1,6 +1,7 @@
 // API Client for Antigravity Backend
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+const rawApiBaseUrl = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+const API_BASE_URL = rawApiBaseUrl.replace(/\/+$/, '').replace(/\/api$/, '');
 
 // Types
 export interface User {
